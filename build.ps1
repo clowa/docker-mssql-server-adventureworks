@@ -2,7 +2,7 @@
 param (
     [Parameter()]
     [String]
-    $DockerTag = "clowa/mssql-server-adventureworks2017",
+    $DockerTag = "clowa/mssql-server-adventureworks",
 
     [Parameter()]
     [String[]]
@@ -10,12 +10,10 @@ param (
 
     [Parameter()]
     [String[]]
+    # Docker images are starting at version of MSSQL 2017
     $Years = @(
         "2019",
-        "2017",
-        "2016",
-        "2014"
-        "2012"
+        "2017"
     ),
 
     [Parameter()]
