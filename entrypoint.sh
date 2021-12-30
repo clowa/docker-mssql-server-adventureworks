@@ -1,26 +1,29 @@
-#!/usr/bin/env bash
-set -e
+#!/bin/bash
 
-while getopts u:p:h:d:f: flag
+function init-databases () {
+    # Wait to be sure MSSQL server came up
+    while ! netcat -z localhost ${MSSQL_TCP_PORT:-1433]} 2> /dev/null
+    do
+        sleep 2
+    done
+    
+    for restoreFile in /init-databases/*.bak
+    do
+        fileName=${restoreFile##*/}
+        base=${fileName%.bak}
+        echo "Importing database $base ..."
+        /opt/mssql-tools/bin/sqlcmd -S $1 -U $2 -P $3 -Q "RESTORE DATABASE [$base] FROM  DISK = '$restoreFile' WITH FILE = 1,  MOVE '$base' TO N'/var/opt/mssql/data/${base}.mdf',  MOVE '${base}_log' TO N'/var/opt/mssql/data/${base}_log.ldf', NOUNLOAD, REPLACE, STATS = 5" || exit 1
+        rm -rf $restoreFile
+    done
+}
+
+while getopts h:u:p: flag
 do
     case "${flag}" in
+        h) HOSTNAME=${OPTARG};;
         u) USERNAME=${OPTARG};;
         p) PASSWORD=${OPTARG};;
-        h) HOSTNAME=${OPTARG};;
-        d) DATABASE=${OPTARG};;
-        f) BACKUPFILE=${OPTARG};;
     esac
 done
 
-echo "USERNAME: $USERNAME"
-echo "PASSWORD: $PASSWORD"
-echo "HOSTNAME: $HOSTNAME"
-echo "DATABASE: $DATABASE"
-echo "BACKUPFILE: $BACKUPFILE"
-shift 10
-# echo "\$@: $@"
-
-exec /opt/mssql/bin/sqlservr
-
-sqlcmd -S $HOSTNAME -U $USERNAME -P $PASSWORD -Q "RESTORE DATABASE [Database] FROM  DISK = N'$BACKUPFILE' WITH FILE = 1,  MOVE N'$DATABASE' TO N'/var/opt/mssql/data/${DATABASE}.mdf',  MOVE N'$DATABASE_log' TO N'/var/opt/mssql/data/${DATABASE}_log.ldf', NOUNLOAD, REPLACE, STATS = 5" || exit 1
-
+init-databases $HOSTNAME $USERNAME $PASSWORD & /opt/mssql/bin/sqlservr
