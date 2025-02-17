@@ -1,3 +1,6 @@
+> [!NOTE]
+> This repository has been archvied on 17.02.2025
+
 # Overview
 
 Just a little docker repo to build a MSSQL-server image with the example database [AdventureWorks](https://github.com/microsoft/sql-server-samples/tree/master/samples/databases/adventure-works) preinstalled.
